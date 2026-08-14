@@ -7,120 +7,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
-  <header class="header">
-    <h1>Invitados por WhatsApp</h1>
-    <p class="subtitle">
-      <span id="progress-count">{{ sent_count }}</span> / {{ total_count }} enviados &middot;
-      enlace: <a href="{{ wedding_url }}" target="_blank" rel="noopener">{{ wedding_url }}</a>
-    </p>
-  </header>
+  <div class="app">
+    <header class="app-header" id="app-header"></header>
 
-  <section class="template-editor">
-    <h2>Mensaje</h2>
-    <textarea id="message-template" rows="4">{{ message_template }}</textarea>
-    <p class="template-hint">
-      Variables disponibles: <code>{{ '{first_name}' }}</code> (nombre del invitado),
-      <code>{{ '{link}' }}</code> ({{ wedding_url }}),
-      <code>{{ '{code}' }}</code> ({{ event_code }})
-    </p>
-    <div class="template-actions">
-      <button id="save-template" class="primary">Guardar mensaje</button>
-      <span id="template-status" class="template-status"></span>
-    </div>
-  </section>
+    <div class="app-body">
+      <section class="list-section">
+        <div class="list-toolbar" id="list-toolbar"></div>
+        <div class="tag-filter-row" id="tag-filter-row"></div>
+        <div class="list-scroll" id="list-scroll"></div>
+      </section>
 
-  <section class="controls">
-    <input id="search" type="search" placeholder="Buscar por nombre…">
-    <div id="tag-filters" class="tag-filters">
-      {% for tag in tags %}
-        <label class="tag-chip">
-          <input type="checkbox" class="tag-checkbox" value="{{ tag }}">
-          {{ tag }}
-        </label>
-      {% endfor %}
+      <aside class="detail-pane">
+        <div class="pane-scroll" id="pane-scroll"></div>
+        <div class="pane-footer" id="pane-footer"></div>
+      </aside>
     </div>
-    <label class="hide-sent">
-      <input type="checkbox" id="hide-sent">
-      Ocultar ya enviados
-    </label>
-    <label class="group-toggle">
-      <input type="checkbox" id="group-mode">
-      Agrupar por grupo
-    </label>
-    <div class="bulk-actions">
-      <button id="select-all">Seleccionar visibles</button>
-      <button id="select-none">Quitar selección</button>
-      <button id="start-queue" class="primary">Iniciar envío ➜</button>
-    </div>
-  </section>
 
-  <div id="queue-panel" class="queue-panel hidden">
-    <p>Enviando a <strong id="queue-name"></strong> (<span id="queue-position"></span>)</p>
-    <div class="queue-buttons">
-      <a id="queue-link" class="primary" href="#" target="_blank" rel="noopener">Abrir WhatsApp</a>
-      <button id="queue-next">Siguiente ➜</button>
-      <button id="queue-stop">Detener</button>
-    </div>
+    <div class="focus-overlay hidden" id="focus-overlay"></div>
   </div>
 
-  <table class="guest-table">
-    <thead>
-      <tr>
-        <th></th>
-        <th>Nombre</th>
-        <th>Etiquetas</th>
-        <th>Teléfono</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody id="guest-rows">
-      {% for guest in guests %}
-        <tr class="guest-row {{ 'sent' if guest.sent else '' }}"
-            data-id="{{ guest.id }}"
-            data-name="{{ guest.name|lower }}"
-            data-tags="{{ guest.tags|join(',') }}"
-            data-link="{{ guest.wa_link }}"
-            data-party-key="{{ guest.party_key }}"
-            data-party-size="{{ guest.party_size }}"
-            data-party-co="{{ guest.party_co_ids|join(',') }}">
-          <td><input type="checkbox" class="row-select"></td>
-          <td>
-            {{ guest.name }}
-            {% if guest.party_size > 1 %}
-              <span class="party-badge" title="Grupo con: {{ guest.party_note }}">👥 {{ guest.party_size }}</span>
-            {% endif %}
-          </td>
-          <td class="tags-cell">{{ guest.tags|join(', ') }}</td>
-          <td>{{ guest.phone }}</td>
-          <td>
-            <a class="send-btn" href="{{ guest.wa_link }}" target="_blank" rel="noopener">Enviar</a>
-            <span class="sent-mark">{{ '✅' if guest.sent else '' }}</span>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  {% if follow_up %}
-  <section class="follow-up">
-    <h2>Sin teléfono — seguimiento manual ({{ follow_up|length }})</h2>
-    <table class="guest-table">
-      <thead>
-        <tr><th>Nombre</th><th>Etiquetas</th><th>Email</th></tr>
-      </thead>
-      <tbody>
-        {% for guest in follow_up %}
-          <tr>
-            <td>{{ guest.name }}</td>
-            <td>{{ guest.tags|join(', ') }}</td>
-            <td>{{ guest.email or '—' }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-  {% endif %}
-
+  <script id="initial-data" type="application/json">{{ initial_data_json|safe }}</script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

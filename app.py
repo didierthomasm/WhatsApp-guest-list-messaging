@@ -1,9 +1,9 @@
+import json
 import os
-from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request
 
-from guests import all_tags, group_by_party, load_guests
+from guests import load_guests
 from state import load_state, mark_sent, unmark_sent
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,67 +31,39 @@ def render_message(template: str, first_name: str) -> str:
     return template.format(first_name=first_name, link=WEDDING_URL, code=EVENT_CODE)
 
 
-def build_message(first_name: str) -> str:
-    return render_message(load_template(), first_name)
-
-
-def wa_link(phone_wa: str, first_name: str) -> str:
-    message = build_message(first_name)
-    return f"https://wa.me/{phone_wa}?text={quote(message)}"
-
-
 @app.route("/")
 def index():
     sendable, follow_up = load_guests(CSV_PATH)
+    all_guests = sorted(sendable + follow_up, key=lambda guest: guest.id)
     sent_state = load_state(STATE_PATH)
 
-    party_groups = group_by_party(sendable + follow_up)
-    sendable_ids = {guest.id for guest in sendable}
-
-    rows = []
-    for guest in sendable:
-        party_members = party_groups.get(guest.party, []) if guest.party else []
-        co_members = [member for member in party_members if member.id != guest.id]
-
-        rows.append(
-            {
-                "id": guest.id,
-                "name": guest.full_name,
-                "phone": guest.phone_raw,
-                "tags": guest.tags,
-                "wa_link": wa_link(guest.phone_wa, guest.first_name or guest.full_name),
-                "sent": str(guest.id) in sent_state,
-                "party_key": guest.party,
-                "party_size": len(party_members),
-                "party_co_ids": [member.id for member in co_members if member.id in sendable_ids],
-                "party_note": ", ".join(
-                    member.full_name + ("" if member.id in sendable_ids else " (sin teléfono)")
-                    for member in co_members
-                ),
-            }
-        )
-
-    follow_up_rows = [
+    guests_payload = [
         {
             "id": guest.id,
+            "first": guest.first_name or guest.full_name,
             "name": guest.full_name,
+            "phone": guest.phone_raw,
+            "waPhone": guest.phone_wa,
             "email": guest.email,
             "tags": guest.tags,
+            "party": guest.party,
+            "hasPhone": guest.has_phone,
         }
-        for guest in follow_up
+        for guest in all_guests
     ]
 
-    return render_template(
-        "index.html",
-        guests=rows,
-        follow_up=follow_up_rows,
-        tags=all_tags(sendable),
-        wedding_url=WEDDING_URL,
-        event_code=EVENT_CODE,
-        message_template=load_template(),
-        sent_count=len(sent_state),
-        total_count=len(rows),
-    )
+    initial_data = {
+        "weddingUrl": WEDDING_URL,
+        "eventCode": EVENT_CODE,
+        "template": load_template(),
+        "sentIds": [int(guest_id) for guest_id in sent_state.keys()],
+        "guests": guests_payload,
+    }
+
+    # Prevent a stray "</script>" in guest data from closing the embedding tag early.
+    initial_data_json = json.dumps(initial_data, ensure_ascii=False).replace("</", "<\\/")
+
+    return render_template("index.html", initial_data_json=initial_data_json)
 
 
 @app.route("/api/message-template", methods=["POST"])

@@ -64,23 +64,3 @@ def load_guests(csv_path: str):
                 follow_up.append(guest)
 
     return sendable, follow_up
-
-
-def group_by_party(guests: list) -> dict:
-    groups = {}
-    for guest in guests:
-        if not guest.party:
-            continue
-        groups.setdefault(guest.party, []).append(guest)
-    return groups
-
-
-def all_tags(guests: list) -> list:
-    seen = set()
-    ordered = []
-    for guest in guests:
-        for tag in guest.tags:
-            if tag not in seen:
-                seen.add(tag)
-                ordered.append(tag)
-    return ordered
