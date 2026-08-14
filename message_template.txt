@@ -1,0 +1,3 @@
+¡Hola {first_name}! 💌 Nos encantaría contar contigo en la boda de Carolina y Didier. Aquí tienes toda la información: {link}
+
+Para confirmar tu asistencia, entra a "Confirmar Asistencia" y usa este código: {code}
